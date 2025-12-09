@@ -2,3 +2,5 @@
 .venv
 .vscode
 .env
+/build
+/dist
