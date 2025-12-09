@@ -1,172 +1,163 @@
+import streamlit as st
 from spotipy import oauth2, Spotify
 import os
-import shutil
-import sys
 import pandas as pd
-from pandas import json_normalize
 from dotenv import load_dotenv
+import io
+import zipfile
 
 load_dotenv()
+
+st.set_page_config(page_title="Spotilist", page_icon="🎵", layout="wide")
 
 SCOPE = "playlist-read-private"
 CACHE = ".spotipyoauthcache"
 
-SPOTIPY_CLIENT_ID = os.getenv("SPOTIPY_CLIENT_ID")
-SPOTIPY_CLIENT_SECRET = os.getenv("SPOTIPY_CLIENT_SECRET")
-SPOTIPY_REDIRECT_URI = os.getenv("SPOTIPY_REDIRECT_URI", "http://127.0.0.1:8080") 
+def get_auth():
+    client_id = os.getenv("SPOTIPY_CLIENT_ID")
+    client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
+    redirect_uri = os.getenv("SPOTIPY_REDIRECT_URI")
 
-def create_spotify():
-    if not SPOTIPY_CLIENT_ID or not SPOTIPY_CLIENT_SECRET:
-        print("Clés API manquantes dans le fichier .env")
+    if not client_id or not client_secret:
+        st.error("⚠️ API keys missing in .env file")
         return None
-    
-    auth_mg = oauth2.SpotifyOAuth(
-        SPOTIPY_CLIENT_ID,
-        SPOTIPY_CLIENT_SECRET,
-        SPOTIPY_REDIRECT_URI,
+
+    auth_manager = oauth2.SpotifyOAuth(
+        client_id=client_id,
+        client_secret=client_secret,
+        redirect_uri=redirect_uri,
         scope=SCOPE,
         cache_path=CACHE,
     )
-    spotify = Spotify(auth_manager=auth_mg)
-    return spotify, auth_mg
+    return Spotify(auth_manager=auth_manager)
 
+def process_track(track_item):
+    if track_item["track"] is None or track_item["track"]["is_local"]:
+        return None
 
-def call_playlist(user, playlist_id, sp):
+    t = track_item["track"].copy()
+    
+    artist_names = ", ".join([artist["name"] for artist in t["artists"]])
+    
+    clean_track = {
+        "id": t["id"],
+        "artists": artist_names,
+        "name": t["name"],
+        "album_name": t["album"]["name"],
+        "added_at": track_item["added_at"],
+        "album_type": t["album"]["album_type"],
+        "album_release_date": t["album"]["release_date"],
+        "duration_ms": t["duration_ms"],
+        "href": t["href"],
+        "spotify_url": t["external_urls"]["spotify"]
+    }
+    return clean_track
+
+def get_playlist_data(sp, playlist_id):
+    results = sp.playlist_tracks(playlist_id)
+    tracks = results["items"]
+    
+    # Handle pagination to get all tracks
+    while results["next"]:
+        results = sp.next(results)
+        tracks.extend(results["items"])
+    
+    clean_tracks = []
     errors = 0
-    results = sp.user_playlist_tracks(user, playlist_id)
-    playlist = results["items"]  
-    track_list = []
-    k = 0
-    for i in range(len(playlist)):
-        if playlist[i]["track"] is not None:
-            if playlist[i]["track"]["is_local"] is False:
-                track_list.append(playlist[i]["track"].copy())
-                track_list[k].pop("preview_url")
-                track_list[k].pop("available_markets")
-                track_list[k].pop("explicit")
-                track_list[k].pop("uri")
-                track_list[k].pop("is_local")
-                track_list[k].pop("popularity")
-                track_list[k].pop("external_ids")
-                track_list[k].pop("track")
-                track_list[k].pop("type")
-                track_list[k].pop("album")
-                track_list[k].pop("episode")
-                
-                track_list[k]["artists"] = ", ".join([playlist[i]["track"]["artists"][j]["name"] for j in range(len(playlist[i]["track"]["artists"]))])
-                track_list[k]["added_at"] = playlist[i]["added_at"]
-                track_list[k]["album_name"] = playlist[i]["track"]["album"]["name"]
-                track_list[k]["album_type"] = playlist[i]["track"]["album"]["album_type"]
-                track_list[k]["album_release_date"] = playlist[i]["track"]["album"]["release_date"]
-            
-            else:
-                track_list.append({})
-                track_list[k]["artists"] = playlist[i]["track"]["artists"][0]["name"]
-                track_list[k]["name"] = playlist[i]["track"]["name"]
-                track_list[k]["album"] = playlist[i]["track"]["album"]
-            k += 1
+    
+    for item in tracks:
+        processed = process_track(item)
+        if processed:
+            clean_tracks.append(processed)
         else:
             errors += 1
             
-    track_list = json_normalize(track_list)
-    playlist_df = pd.DataFrame.from_dict(track_list)
-    
-    while results["next"]:
-        results = sp.next(results)
-        playlist = results["items"]
-        track_list = []
-        k = 0
-        for i in range(len(playlist)):
-            if playlist[i]["track"] is not None:
-                if playlist[i]["track"]["is_local"] is False:
-                    track_list.append(playlist[i]["track"].copy())
-                    track_list[k].pop("preview_url")
-                    track_list[k].pop("available_markets")
-                    track_list[k].pop("explicit")
-                    track_list[k].pop("uri")
-                    track_list[k].pop("is_local")
-                    track_list[k].pop("popularity")
-                    track_list[k].pop("external_ids")
-                    track_list[k].pop("track")
-                    track_list[k].pop("type")
-                    track_list[k].pop("album")
-                    track_list[k].pop("episode")
-                    
-                    track_list[k]["artists"] = ", ".join([playlist[i]["track"]["artists"][j]["name"] for j in range(len(playlist[i]["track"]["artists"]))])
-                    track_list[k]["added_at"] = playlist[i]["added_at"]
-                    track_list[k]["album_name"] = playlist[i]["track"]["album"]["name"]
-                    track_list[k]["album_type"] = playlist[i]["track"]["album"]["album_type"]
-                    track_list[k]["album_release_date"] = playlist[i]["track"]["album"]["release_date"]
-                
-                else:
-                    track_list.append({})
-                    track_list[k]["artists"] = playlist[i]["track"]["artists"][0]["name"]
-                    track_list[k]["name"] = playlist[i]["track"]["name"]
-                    track_list[k]["album"] = playlist[i]["track"]["album"]
-                k += 1
-            else:
-                errors += 1
+    if clean_tracks:
+        df = pd.DataFrame(clean_tracks)
+        return df, errors
+    return None, errors
+
+
+# --- UI Starts Here ---
+
+st.title("🎵 Spotilist")
+st.markdown("A spotify playlist exporter.")
+
+
+# Authentication
+if 'sp' not in st.session_state:
+    sp = get_auth()
+    if sp:
+        try:
+            user = sp.current_user()
+            st.session_state['sp'] = sp
+            st.session_state['user'] = user
+            st.success(f"Connected as **{user['display_name']}**")
+        except Exception as e:
+            st.warning("Please authenticate in the pop-up window or check your API keys.")
+            st.stop()
+
+if 'sp' in st.session_state:
+    sp = st.session_state['sp']
+    user_id = st.session_state['user']['id']
+
+    if st.button("🔍 Fetch my playlists"):
+        with st.spinner("Retrieving playlist list..."):
+            playlists = []
+            results = sp.user_playlists(user_id)
+            playlists.extend(results["items"])
             
-        track_list = json_normalize(track_list)
-        track_df = pd.DataFrame.from_dict(track_list)
-        playlist_df = pd.concat([playlist_df, track_df], ignore_index=True)
+            while results["next"]:
+                results = sp.next(results)
+                playlists.extend(results["items"])
+            
+            st.session_state['playlists'] = playlists
+            st.success(f"{len(playlists)} playlists found!")
 
-    if not playlist_df.empty:
-        playlist_df = playlist_df[["id", "artists", "name", "album_name", "added_at", "album_type", "album_release_date", "duration_ms", "href", "external_urls.spotify"]]
-        return playlist_df, errors
-    else:
-        return None, 0
+    if 'playlists' in st.session_state:
+        playlists = st.session_state['playlists']
+        
+        st.subheader("Export Data")
+        
+        playlist_options = {p['name']: p['id'] for p in playlists}
+        selected_playlists = st.multiselect(
+            "Which playlists do you want to export?", 
+            options=playlist_options.keys(),
+            default=playlist_options.keys()
+        )
 
+        if st.button("🚀 Start Extraction"):
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            zip_buffer = io.BytesIO()
+            
+            with zipfile.ZipFile(zip_buffer, "w") as zf:
+                total = len(selected_playlists)
+                
+                for i, p_name in enumerate(selected_playlists):
+                    p_id = playlist_options[p_name]
+                    status_text.text(f"Processing: {p_name}...")
+                    
+                    df, errors = get_playlist_data(sp, p_id)
+                    
+                    if df is not None:
+                        safe_name = "".join([c for c in p_name if c.isalpha() or c.isdigit() or c==' ']).rstrip()
+                        csv_data = df.to_csv(index=False).encode('utf-8')
+                        zf.writestr(f"{safe_name}.csv", csv_data)
+                    
+                    progress_bar.progress((i + 1) / total)
 
-def get_all_playlist(user, sp, path):
-    print("Recherche des playlists...")
-    try:
-        results = sp.user_playlists(user)
-    except Exception as error:
-        print("Utilisateur introuvable.")
-        return
-    
-    pl_data = results["items"]
-    playlists = []
-    for pl in pl_data:
-        playlists.append({"name": pl["name"], "id": pl["id"]})
-    while results["next"]:
-        results = sp.next(results)
-        pl_data = results["items"]
-        for pl in pl_data:
-            playlists.append({"name": pl["name"], "id": pl["id"]})
-    print(str(len(playlists)) + " playlists trouvées")
-    
-    print("***************************")
-    print("Récuperation des playlists.")
-    i = 1
-    for pl in playlists:
-        print("Playlist : " + pl["name"])
-        data, errors = call_playlist(user, pl["id"], sp)
-        if data is not None:
-            data.to_csv(f"{path}{i}_{user}_{pl['name'].replace('/', '')}_{pl['id']}.csv", index=True)
-            print("Récupération de " + pl["name"] + " : OK. " + str(errors) + " erreurs.")
-        else:
-            print("Récupération de " + pl["name"] + " : Playlist vide.")
-        i = i + 1
-    print(f"{i} playlists récupérées et exportées dans le dossier /data/.")
-
-
-print("Connexion à l'API Spotify...")
-path = "~/Documents/playlists/"
-absolute_path = os.path.expanduser(path)
-
-if os.path.exists(absolute_path):
-    shutil.rmtree(absolute_path)
-
-os.makedirs(absolute_path)
-if create_spotify() is None: 
-    sys.exit()
-sp, auth_code = create_spotify()
-user_profile = sp.current_user()
-username = user_profile['id']
-get_all_playlist(username, sp, path)
-print("Fin.")
-print("Appuyer sur une touche pour fermer")
-x = input()
-sys.exit()
+            progress_bar.progress(100)
+            status_text.text("Done!")
+            
+            st.download_button(
+                label="📥 Download all playlists (ZIP)",
+                data=zip_buffer.getvalue(),
+                file_name="my_spotify_playlists.zip",
+                mime="application/zip"
+            )
+            
+            if 'df' in locals() and df is not None:
+                st.write("Preview of the last processed playlist:")
+                st.dataframe(df.head())
