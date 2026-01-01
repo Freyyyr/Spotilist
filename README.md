@@ -32,34 +32,37 @@ pip install -r requirements.txt
 
 This application requires Spotify API credentials to access your playlists.
 
-    1. Go to the Spotify Developer Dashboard.
-    2. Create a new app to obtain your Client ID and Client Secret.
-    3. In your app settings on the dashboard, add the following URL to the Redirect URIs whitelist:
+1. Go to the Spotify Developer Dashboard.
+2. Create a new app to obtain your Client ID and Client Secret.
+3. In your app settings on the dashboard, add the following URL to the Redirect URIs whitelist:
 
-        http://localhost:8080 (or the port defined in your script)
+```	
+http://localhost:8080 (or the port defined in your script)
+```
 
 First Run Setup: Upon launching the application for the first time, you will be prompted to enter your credentials directly in the interface:
 
-    - SPOTIPY_CLIENT_ID
-    - SPOTIPY_CLIENT_SECRET
-    - SPOTIPY_REDIRECT_URI
+- SPOTIPY_CLIENT_ID
+- SPOTIPY_CLIENT_SECRET
+- SPOTIPY_REDIRECT_URI
 
 These will be saved locally in a .env file for future use.
 
 ## Running Locally
 
 To start the application in development mode:
-Bash
-
+```Bash
 streamlit run app/script.py
+```
 
 ## Building the Executable
 
 To compile the application into a standalone executable file using PyInstaller:
-Bash
 
+```Bash
 ### Windows / Linux / macOS
 pyinstaller Spotilist.spec --clean
+```
 
 Ensure that your Spotilist.spec file is correctly configured to include the Streamlit runtime hooks and datas.
 
