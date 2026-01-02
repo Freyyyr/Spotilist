@@ -60,10 +60,12 @@
     "python:mac": "pyinstaller --noconfirm --onefile --windowed --name \"spotilist_backend\" --distpath \"./executables/mac\" --workpath \"./build\" --collect-all streamlit --collect-all spotipy --collect-all pandas --collect-all altair --add-data \"app/script.py:.\" app/run.py",
     "python:win": "pyinstaller --noconfirm --onefile --windowed --name \"spotilist_backend\" --distpath \"./executables/win\" --workpath \"./build\" --collect-all streamlit --collect-all spotipy --collect-all pandas --collect-all altair --add-data \"app/script.py;.\" app/run.py",
     "electron:linux": "electron-builder --linux",
-    "electron:mac": "electron-builder --mac",
+    "electron:mac:intel": "electron-builder --mac --x64",
+    "electron:mac:arm": "electron-builder --mac --arm64",
     "electron:win": "electron-builder --win",
     "build:linux": "npm run clean && npm run python:linux && npm run electron:linux",
-    "build:mac": "npm run clean && npm run python:mac && npm run electron:mac",
+    "build:mac:intel": "npm run clean && npm run python:mac && npm run electron:mac:intel",
+    "build:mac:arm": "npm run clean && npm run python:mac && npm run electron:mac:arm",
     "build:win": "npm run clean && npm run python:win && npm run electron:win"
   },
   "devDependencies": {

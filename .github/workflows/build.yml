@@ -23,11 +23,15 @@ jobs:
             asset_name: Windows_Exe
             path: release/*.exe
 
-          - os: macos-latest
-            npm_command: build:mac
-            asset_name: MacOS_Dmg
-            path: release/*.dmg
+          - os: macos-13
+            npm_command: build:mac:intel
+            asset_name: MacOS_Intel_Dmg
+            path: dist/*.dmg
 
+          - os: macos-14
+            npm_command: build:mac:arm
+            asset_name: MacOS_Arm_Dmg
+            path: dist/*.dmg
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
