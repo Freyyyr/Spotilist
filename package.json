@@ -1,0 +1,73 @@
+{
+  "name": "spotilist",
+  "version": "1.0.0",
+  "description": "Spotilist is a Streamlit-based Python application designed to export your Spotify playlists into CSV files. It automatically fetches track metadata (artists, album, release date, etc.) and packages everything into a convenient downloadable ZIP file.",
+  "homepage": "https://github.com/Freyyyr/Spotilist#readme",
+  "bugs": {
+    "url": "https://github.com/Freyyyr/Spotilist/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Freyyyr/Spotilist.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "main.js",
+  "build": {
+    "appId": "com.spotilist.app",
+    "productName": "Spotilist",
+    "files": [
+      "main.js",
+      "package.json"
+    ],
+    "linux": {
+      "target": "AppImage",
+      "category": "Audio",
+      "icon": "icon.png",
+      "extraResources": [
+        {
+          "from": "executables/linux/spotilist_backend",
+          "to": "spotilist_backend"
+        }
+      ]
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "icon.icns",
+      "extraResources": [
+        {
+          "from": "executables/mac/spotilist_backend",
+          "to": "spotilist_backend"
+        }
+      ]
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico",
+      "extraResources": [
+        {
+          "from": "executables/win/spotilist_backend.exe",
+          "to": "spotilist_backend.exe"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "start": "electron .",
+    "clean": "rimraf dist build release executables/linux/spotilist_backend executables/mac/spotilist_backend executables/win/spotilist_backend.exe",
+    "python:linux": "pyinstaller --noconfirm --onefile --windowed --name \"spotilist_backend\" --distpath \"./executables/linux\" --workpath \"./build\" --collect-all streamlit --collect-all spotipy --collect-all pandas --collect-all altair --add-data \"app/script.py:.\" app/run.py",
+    "python:mac": "pyinstaller --noconfirm --onefile --windowed --name \"spotilist_backend\" --distpath \"./executables/mac\" --workpath \"./build\" --collect-all streamlit --collect-all spotipy --collect-all pandas --collect-all altair --add-data \"app/script.py:.\" app/run.py",
+    "python:win": "pyinstaller --noconfirm --onefile --windowed --name \"spotilist_backend\" --distpath \"./executables/win\" --workpath \"./build\" --collect-all streamlit --collect-all spotipy --collect-all pandas --collect-all altair --add-data \"app/script.py;.\" app/run.py",
+    "electron:linux": "electron-builder --linux",
+    "electron:mac": "electron-builder --mac",
+    "electron:win": "electron-builder --win",
+    "build:linux": "npm run clean && npm run python:linux && npm run electron:linux",
+    "build:mac": "npm run clean && npm run python:mac && npm run electron:mac",
+    "build:win": "npm run clean && npm run python:win && npm run electron:win"
+  },
+  "devDependencies": {
+    "electron": "^39.2.7",
+    "electron-builder": "^24.13.3"
+  }
+}

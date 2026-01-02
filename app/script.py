@@ -97,13 +97,6 @@ def get_playlist_data(sp, playlist_id):
 
 st.title("🎵 Spotilist")
 
-with st.sidebar:
-    st.divider()
-    if st.button("Quit", type="primary"):
-        st.warning("Closing the app...")
-        time.sleep(1)
-        os._exit(0)
-
 if not check_credentials():
     st.warning("Missing configuration. Please entrer your Spotify API keys.")
     st.markdown("You can obtain it from [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).")
