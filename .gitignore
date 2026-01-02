@@ -1,6 +1,31 @@
 .spotipyoauthcache
-.venv
 .vscode
 .env
 /build
 /dist
+node_modules/
+
+# --- Python ---
+
+.venv/
+
+# --- Streamlit & Spotipy Specifics ---
+.env                
+.spotipyoauthcache  
+
+# --- Node.js / Electron ---
+node_modules/
+npm-debug.log
+
+# --- Build Artifacts (Ce qu'on génère) ---
+dist/                  
+build/                  
+release/               
+*.spec               
+
+# --- Executables ---
+executables/linux/*
+executables/mac/*
+executables/win/*
+
+!executables/**/.gitkeep
