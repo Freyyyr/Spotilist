@@ -50,8 +50,7 @@ npm run build:mac
 ```
 
 ### Notes
-
-Yser's data will be saved locally in the application's user data folder:
+User's data will be saved locally in the application's user data folder:
 
     Windows: %APPDATA%/Spotilist/
 
