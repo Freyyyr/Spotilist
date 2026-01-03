@@ -1,6 +1,7 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
+const net = require('net');
 
 let mainWindow;
 let pythonProcess;
@@ -10,15 +11,31 @@ function createWindow() {
         width: 1280,
         height: 720,
         title: "Spotilist",
-        icon: path.join(__dirname, 'icon.png'),
+        show: false,
         webPreferences: {
             nodeIntegration: false
         }
     });
 
-    setTimeout(() => {
-        mainWindow.loadURL('http://localhost:8501');
-    }, 2000);
+    const appUrl = 'http://127.0.0.1:8501';
+
+    const checkServer = () => {
+        const client = new net.Socket();
+
+        client.connect(8501, '127.0.0.1', () => {
+            client.destroy();
+            console.log("Streamlit ready ! Loading...");
+            mainWindow.loadURL(appUrl);
+            mainWindow.show();
+        });
+
+        client.on('error', (err) => {
+            client.destroy();
+            setTimeout(checkServer, 500);
+        });
+    };
+
+    checkServer();
 
     mainWindow.on('closed', function () {
         mainWindow = null;
