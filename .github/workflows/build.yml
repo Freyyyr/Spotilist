@@ -21,7 +21,7 @@ jobs:
           - os: windows-latest
             npm_command: build:win
             asset_name: Windows_Exe
-            path: dist/*.exe    
+            path: dist/*.exe
 
           - os: macos-15-intel
             npm_command: build:mac:intel
@@ -32,6 +32,7 @@ jobs:
             npm_command: build:mac:arm
             asset_name: MacOS_Arm_Dmg
             path: dist/*.dmg
+
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
@@ -48,10 +49,34 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
+          pip install --upgrade pip
+          pip install pyinstaller
           pip install -r app/requirements.txt
-          npm install
+
+      - name: Install Node dependencies
+        run: npm install
+
+      # macOS specific: Install additional dependencies for ARM
+      - name: Install macOS ARM dependencies
+        if: matrix.os == 'macos-15-latest'
+        run: |
+          # For ARM64, ensure we have the right architecture
+          echo "Building on ARM64 architecture"
+          arch
+          # Install any ARM-specific dependencies if needed
+          brew install libomp || true
+
+      # macOS specific: Install additional dependencies for Intel
+      - name: Install macOS Intel dependencies
+        if: matrix.os == 'macos-15-intel'
+        run: |
+          # For Intel architecture
+          echo "Building on Intel architecture"
+          arch
+          # Install any Intel-specific dependencies if needed
+          brew install libomp || true
 
       - name: Build Application
         run: npm run ${{ matrix.npm_command }}
@@ -59,10 +84,31 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
+      - name: Debug - Check Python executable architecture (macOS only)
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          echo "=== Checking Python executable architecture ==="
+          if [ -f "executables/mac/spotilist_backend" ]; then
+            file "executables/mac/spotilist_backend"
+            lipo -archs "executables/mac/spotilist_backend" 2>/dev/null || echo "Not a universal binary"
+          else
+            echo "Python executable not found at executables/mac/spotilist_backend"
+          fi
+          
+          echo "=== Checking Python installation architecture ==="
+          python -c "import platform; print(f'Python arch: {platform.machine()}')"
+          python -c "import sys; print(f'Platform: {sys.platform}')"
+
       - name: List Output Files (Debug)
         shell: bash
         run: |
-          ls -R dist || echo "Dist directory empty"
+          echo "=== Executables directory ==="
+          ls -la executables/ || echo "No executables folder"
+          find executables -type f -exec ls -la {} \; 2>/dev/null || true
+          
+          echo "=== Dist directory ==="
+          ls -la dist/ || echo "No dist folder"
+          find dist -type f -exec ls -la {} \; 2>/dev/null || true
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

@@ -58,7 +58,6 @@ function startPython() {
     else if (process.platform === 'darwin') {
         scriptPath = path.join(
             process.resourcesPath,
-            'spotilist_backend',
             'spotilist_backend'
         );
     }
@@ -69,10 +68,18 @@ function startPython() {
         );
     }
 
+    console.log("Looking for Python executable at:", scriptPath);
+
     const userDataPath = app.getPath('userData');
 
     pythonProcess = spawn(scriptPath, [], {
-        cwd: userDataPath
+        cwd: userDataPath,
+        env: {
+            ...process.env,
+            DYLD_LIBRARY_PATH: process.resourcesPath,
+            STREAMLIT_SERVER_PORT: '8501',
+            STREAMLIT_SERVER_ADDRESS: '127.0.0.1'
+        }
     });
 
     pythonProcess.stdout.on('data', (data) => {
