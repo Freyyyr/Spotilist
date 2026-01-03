@@ -14,9 +14,7 @@ def resolve_path(path):
         basedir = os.path.dirname(__file__)
     return os.path.join(basedir, path)
 
-if __name__ == "__main__":
-    os.environ["STREAMLIT_SERVER_HEADLESS"] = "true"
-    
+if __name__ == "__main__": 
     filename = resolve_path("script.py")
     
     sys.argv = [
@@ -24,5 +22,9 @@ if __name__ == "__main__":
         "run",
         filename,
         "--global.developmentMode=false",
+        "--server.headless=true",
+        "--server.address=127.0.0.1",
+        "--server.port=8501",
+        "--server.fileWatcherType=none"
     ]
     sys.exit(stcli.main())
