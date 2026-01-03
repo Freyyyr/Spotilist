@@ -57,7 +57,7 @@
     "start": "electron .",
     "clean": "rimraf dist build release executables/linux/spotilist_backend executables/mac/spotilist_backend executables/win/spotilist_backend.exe",
     "python:linux": "pyinstaller --noconfirm --onefile --windowed --name \"spotilist_backend\" --distpath \"./executables/linux\" --workpath \"./build\" --collect-all streamlit --collect-all spotipy --collect-all pandas --collect-all altair --add-data \"app/script.py:.\" app/run.py",
-    "python:mac": "pyinstaller --noconfirm --windowed --name \"spotilist_backend\" --distpath \"./executables/mac\" --workpath \"./build\" --collect-all streamlit --collect-all spotipy --collect-all pandas --collect-all altair --add-data \"app/script.py:.\" app/run.py",
+    "python:mac": "pyinstaller --noconfirm --static-libpython --windowed --name \"spotilist_backend\" --distpath \"./executables/mac\" --workpath \"./build\" --collect-all streamlit --collect-all spotipy --collect-all pandas --collect-all altair --add-data \"app/script.py:.\" app/run.py",
     "python:win": "pyinstaller --noconfirm --onefile --windowed --name \"spotilist_backend\" --distpath \"./executables/win\" --workpath \"./build\" --collect-all streamlit --collect-all spotipy --collect-all pandas --collect-all altair --add-data \"app/script.py;.\" app/run.py",
     "electron:linux": "electron-builder --linux",
     "electron:mac:intel": "electron-builder --mac --x64",
