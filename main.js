@@ -41,21 +41,32 @@ function createWindow() {
         mainWindow = null;
     });
 }
-
 function startPython() {
     let scriptPath;
 
-    if (app.isPackaged) {
-        let executableName = 'spotilist_backend';
-
-        if (process.platform === 'win32') {
-            executableName += '.exe';
-        }
-
-        scriptPath = path.join(process.resourcesPath, executableName);
-    } else {
+    if (!app.isPackaged) {
         console.log("Mode Dev: Lancez le backend python manuellement !");
         return;
+    }
+
+    if (process.platform === 'win32') {
+        scriptPath = path.join(
+            process.resourcesPath,
+            'spotilist_backend.exe'
+        );
+    }
+    else if (process.platform === 'darwin') {
+        scriptPath = path.join(
+            process.resourcesPath,
+            'spotilist_backend',
+            'spotilist_backend'
+        );
+    }
+    else {
+        scriptPath = path.join(
+            process.resourcesPath,
+            'spotilist_backend'
+        );
     }
 
     const userDataPath = app.getPath('userData');
@@ -71,7 +82,12 @@ function startPython() {
     pythonProcess.stderr.on('data', (data) => {
         console.error(`Python Error: ${data}`);
     });
+
+    pythonProcess.on('exit', (code) => {
+        console.log(`Python process exited with code ${code}`);
+    });
 }
+
 
 app.on('ready', () => {
     if (app.isPackaged) startPython();
