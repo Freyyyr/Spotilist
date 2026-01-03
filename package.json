@@ -75,8 +75,8 @@
     "electron:mac:arm": "electron-builder --mac --arm64",
     "electron:win": "electron-builder --win",
     "build:linux": "npm run clean && npm run python:linux && npm run electron:linux",
-    "build:mac:intel": "npm run clean && npm run python:mac && npm run electron:mac:intel",
-    "build:mac:arm": "npm run clean && npm run python:mac && npm run electron:mac:arm",
+    "build:mac:intel": "npm run clean && npm run python:mac:intel && npm run electron:mac:intel",
+    "build:mac:arm": "npm run clean && npm run python:mac:arm && npm run electron:mac:arm",
     "build:win": "npm run clean && npm run python:win && npm run electron:win"
   },
   "devDependencies": {
